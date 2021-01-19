@@ -1,0 +1,75 @@
+<script src="https://apis.google.com/js/api.js"></script>
+<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css"
+  integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+<script src="jquery-3.5.1.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.3.1.slim.min.js"
+  integrity="sha384-q8i/X+965DzO0rT7abK41JStQIAqVgRVzpbzo5smXKp4YfRvH+8abtTE1Pi6jizo" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"
+  integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"
+  integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+<script>
+
+  $(document).ready( function() {
+    var queryString = window.location.search;
+    var urlParams = new URLSearchParams(queryString);
+    var emotion = urlParams.get("emotion");
+    var emoji = urlParams.get("emoji");
+    var instrument = urlParams.get("instrument");
+    var genre = urlParams.get("genre");
+    $('#emotionTitle').html("<h1>"+emotion+" &#"+emoji+";</h1>");
+    }
+  )
+  function authenticate() {
+    return gapi.auth2.getAuthInstance()
+      .signIn({ scope: "https://www.googleapis.com/auth/youtube.force-ssl" })
+      .then(function () { console.log("Sign-in successful"); },
+        function (err) { console.error("Error signing in", err); });
+  }
+  function loadClient() {
+    gapi.client.setApiKey("AIzaSyCd3W3qceXzphVLlpN7wI0IaZ4dksM9uiY");
+    return gapi.client.load("https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest")
+      .then(function () { console.log("GAPI client loaded for API"); },
+        function (err) { console.error("Error loading GAPI client for API", err); });
+  }
+  // Make sure the client is loaded and sign-in is complete before calling this method.
+  function execute() {
+    var queryString = window.location.search;
+    var urlParams = new URLSearchParams(queryString);
+    var emotion = urlParams.get("emotion");
+    var emoji = urlParams.get("emoji");
+    var instrument = urlParams.get("instrument");
+    var genre = urlParams.get("genre");
+    return gapi.client.youtube.search.list({
+      "part": [
+        "snippet"
+      ],
+      "maxResults": 25,
+      "q": emotion+" "+instrument+ " "+genre+" music"
+    })
+      .then(function (response) {
+        // Handle the results here (response.result has the parsed body).
+        console.log("Response", response);
+        for (i=0; i< response.result.items.length; i++) {
+          if (response.result.items[i].id.kind == "youtube#video") {
+            $('#embed').html('<iframe width="560" height="315" src="https://www.youtube.com/embed/'+ response.result.items[i].id.videoId+'" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>');
+            console.log(emotion + " " + instrument + " " + genre + " music");
+            console.log(response.result.items[i].id.videoId);
+            break;
+          }
+        }
+      },
+        function (err) { console.error("Execute error", err); });
+  }
+  gapi.load("client:auth2", function () {
+    gapi.auth2.init({ client_id: "781717854394-5o3g976vl94fhs14vvpbhsp9ehf3f04p.apps.googleusercontent.com" });
+  });
+</script>
+<center>
+  <div class="mt-4"id='emotionTitle'></div>
+  <br>
+  <button class="btn btn-lg btn-primary mb-4 mr-4" onclick="authenticate().then(loadClient)">Authorize & Load</button>
+  <button class="btn btn-lg btn-primary mb-4 mr-4" onclick="execute()">Execute</button>
+  <br>
+  <div id="embed"></div>
+</center>
